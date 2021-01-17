@@ -1,5 +1,7 @@
 use rand::prelude::*;
 
+use crate::vec3::{Point3, Vec3};
+
 pub fn random<T, R>(range: R) -> T
 where
     T: rand::distributions::uniform::SampleUniform,

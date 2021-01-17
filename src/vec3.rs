@@ -21,10 +21,24 @@ impl Vec3 {
         Self::new(0.0, 0.0, 0.0)
     }
 
+    pub const fn x() -> Self {
+        Self::new(1.0, 0.0, 0.0)
+    }
+
+    pub const fn y() -> Self {
+        Self::new(0.0, 1.0, 0.0)
+    }
+
+    pub const fn z() -> Self {
+        Self::new(0.0, 0.0, 1.0)
+    }
+
     pub fn from_polar(length: f32, azimuthal_angle: f32, polar_angle: f32) -> Self {
+        let sin_polar_angle = f32::sin(polar_angle);
+
         Self::new(
-            f32::sin(polar_angle) * f32::cos(azimuthal_angle),
-            f32::sin(polar_angle) * f32::sin(azimuthal_angle),
+            sin_polar_angle * f32::cos(azimuthal_angle),
+            sin_polar_angle * f32::sin(azimuthal_angle),
             f32::cos(polar_angle),
         ) * length
     }

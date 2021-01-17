@@ -1,11 +1,13 @@
-use std::f32::consts::PI;
 use std::sync::Arc;
 
 use tracer::{
     camera::Camera,
     color::{Color, BLACK},
-    hittables::{Hittable, HittableList, Sphere},
+    hittable::Hittable,
+    materials::{Lambertian, Material},
+    objects::{Object, ObjectList, Sphere},
     scene::Scene,
+    textures::SolidColor,
     vec3::{Point3, Vec3},
 };
 
@@ -34,16 +36,23 @@ impl Demo for CornellBox {
     }
 
     fn scene(&self) -> Scene {
-        let mut objects = Vec::<Arc<dyn Hittable>>::new();
-        let mut lights = Vec::<Arc<dyn Hittable>>::new();
+        let mut objects = Vec::<Arc<dyn Object>>::new();
+        let mut lights = Vec::<Arc<dyn Object>>::new();
 
-        let sphere = Arc::new(Sphere::new(Point3::new(0.0, 0.0, 0.0), 1.0, None));
+        let sphere = Arc::new(Sphere::new(
+            Point3::new(0.0, 0.0, 0.0),
+            1.0,
+            Arc::new(Material::Reflective(Arc::new(Lambertian::new(
+                Arc::new(SolidColor::new(100.0, 2.0)),
+                1.0,
+            )))),
+        ));
 
         objects.push(sphere);
 
         Scene::new(
-            Arc::new(HittableList::new(objects)),
-            Arc::new(HittableList::new(lights)),
+            Arc::new(ObjectList::new(objects)),
+            Arc::new(ObjectList::new(lights)),
             |_ray| BLACK,
         )
     }

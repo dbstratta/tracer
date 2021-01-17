@@ -80,6 +80,8 @@ impl Camera {
         Ray::new(
             ray_origin,
             ray_direction,
+            1.0,
+            1.0,
             random(self.time..(self.time + self.shutter_speed)),
         )
     }

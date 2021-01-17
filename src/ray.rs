@@ -12,15 +12,23 @@ pub struct Ray {
     pub origin: Point3,
     pub direction: Vec3,
     pub wavelength: f32,
+    pub probability: f32,
     pub time: f32,
 }
 
 impl Ray {
-    pub fn new(origin: Point3, direction: Vec3, wavelength: f32, time: f32) -> Self {
+    pub fn new(
+        origin: Point3,
+        direction: Vec3,
+        wavelength: f32,
+        probability: f32,
+        time: f32,
+    ) -> Self {
         Self {
             origin,
             direction,
             wavelength,
+            probability,
             time,
         }
     }
@@ -35,8 +43,8 @@ impl Ray {
         }
 
         match scene.objects.hit(self, MAX_T) {
-            Some(hit) => Color::new(1.0, 1.0, 0.0),
             None => scene.background(self),
+            Some(hit) => Color::new(0.0, 1.0, 0.0),
         }
     }
 }
