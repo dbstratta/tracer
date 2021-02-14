@@ -1,11 +1,14 @@
+use std::f32::consts::PI;
 use std::sync::Arc;
 
 use crate::{
+    helpers::random,
     hittable::{Hit, Hittable},
     materials::Material,
     mobile::{position, Mobile},
     objects::Object,
-    ray::{Ray, MIN_T},
+    onb::Onb,
+    ray::{Ray, MAX_T, MIN_T},
     vec3::{dot, Point3, Vec3},
 };
 
@@ -91,6 +94,38 @@ impl Hittable for Sphere {
             }
             hit => hit,
         }
+    }
+
+    fn ray_to_self_probability(&self, ray: &Ray) -> f32 {
+        match self.hit(ray, MAX_T) {
+            Some(_) => {
+                let cos_theta_max = (1.0
+                    - self.radius.powi(2) / (self.center(ray.time) - ray.origin).len_squared())
+                .sqrt();
+
+                let solid_angle = 2.0 * PI * (1.0 - cos_theta_max);
+
+                1.0 / solid_angle
+            }
+            None => 0.0,
+        }
+    }
+
+    fn random_direction_to_self(&self, origin: Point3, time: f32) -> Vec3 {
+        let direction = self.center(time) - origin;
+
+        let r1 = random(0.0..1.0);
+        let r2 = random(0.0..1.0);
+
+        let z = 1.0 + r2 * (f32::sqrt(1.0 - self.radius.powi(2) / direction.len_squared()) - 1.0);
+
+        let phi = 2.0 * PI * r1;
+        let x = phi.cos() * (1.0 - z.powi(2)).sqrt();
+        let y = phi.sin() * (1.0 - z.powi(2)).sqrt();
+
+        let direction = Vec3::new(x, y, z);
+
+        Onb::from_w(direction).local(direction)
     }
 }
 

@@ -21,14 +21,14 @@ impl Triangle {
     }
 }
 
-impl Object for Triangle {}
+// impl Object for Triangle {}
 
-impl Hittable for Triangle {
-    fn hit(&self, ray: &Ray, max_t: f32) -> Option<Hit> {
-        None
-    }
-}
+// impl Hittable for Triangle {
+//     fn hit(&self, ray: &Ray, max_t: f32) -> Option<Hit> {
+//         None
+//     }
+// }
 
-impl Mobile for Triangle {
-    fn accelerate(&mut self, acceleration: Vec3, initial_velocity: Vec3) {}
-}
+// impl Mobile for Triangle {
+//     fn accelerate(&mut self, acceleration: Vec3, initial_velocity: Vec3) {}
+// }

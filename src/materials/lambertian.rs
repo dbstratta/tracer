@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
 use crate::{
-    helpers::random,
     hittable::Hit,
-    materials::ReflectiveMaterial,
+    materials::{ReflectiveMaterial, ScatterResult},
+    pdfs,
     ray::Ray,
     textures::Texture,
-    vec3::{dot, Vec3},
 };
 
 pub struct Lambertian {
@@ -21,26 +20,25 @@ impl Lambertian {
             reflectance,
         }
     }
+
+    pub fn scatter_probability(&self, wavelength: f32, hit: &Hit) -> f32 {
+        self.reflectance * self.texture.probability(wavelength, hit.u, hit.v)
+    }
 }
 
 impl ReflectiveMaterial for Lambertian {
-    fn scatter(&self, ray: &Ray, hit: &Hit) -> Option<Ray> {
-        let scattered_ray_probability = ray.probability
-            * self.reflectance
-            * self.texture.probability(ray.wavelength, hit.u, hit.v);
+    fn scatter(&self, ray: &Ray, hit: &Hit) -> Option<ScatterResult> {
+        let scatter_probability = self.scatter_probability(ray.wavelength, hit);
 
-        if scattered_ray_probability == 0.0 {
+        if scatter_probability == 0.0 {
             return None;
         }
 
-        let scattered_direction = Vec3::from_polar(1.0, f32::acos(dot(hit.normal, Vec3::x())));
+        let pdf = Arc::new(pdfs::Cosine::new(hit.normal));
 
-        Some(Ray::new(
-            hit.point,
-            scattered_direction,
-            ray.wavelength,
-            scattered_ray_probability,
-            ray.time,
-        ))
+        Some(ScatterResult::Diffuse {
+            pdf,
+            scatter_probability,
+        })
     }
 }

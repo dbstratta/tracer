@@ -2,9 +2,7 @@ use std::sync::Arc;
 
 use tracer::{
     camera::Camera,
-    color::{Color, BLACK},
-    hittable::Hittable,
-    materials::{Lambertian, Material},
+    materials::{BlackBody, Lambertian, Material},
     objects::{Object, ObjectList, Sphere},
     scene::Scene,
     textures::SolidColor,
@@ -43,17 +41,39 @@ impl Demo for CornellBox {
             Point3::new(0.0, 0.0, 0.0),
             1.0,
             Arc::new(Material::Reflective(Arc::new(Lambertian::new(
-                Arc::new(SolidColor::new(100.0, 2.0)),
+                Arc::new(SolidColor::new(400.0, 100.0)),
                 1.0,
             )))),
         ));
 
         objects.push(sphere);
 
+        let sphere2: Arc<dyn Object> = Arc::new(Sphere::new(
+            Point3::new(0.0, -2.0, 0.0),
+            1.0,
+            // Arc::new(Material::Reflective(Arc::new(Lambertian::new(
+            //     Arc::new(SolidColor::new(400.0, 100.0)),
+            //     10.0,
+            // )))),
+            Arc::new(Material::Emissive(Arc::new(BlackBody::new(5000.0, 1.0)))),
+        ));
+
+        // objects.push(Arc::clone(&sphere2));
+        // lights.push(sphere2);
+
+        let light: Arc<dyn Object> = Arc::new(Sphere::new(
+            Point3::new(0.0, 10.0, 0.0),
+            7.0,
+            Arc::new(Material::Emissive(Arc::new(BlackBody::new(3000.0, 1.0)))),
+        ));
+
+        objects.push(Arc::clone(&light));
+        lights.push(light);
+
         Scene::new(
             Arc::new(ObjectList::new(objects)),
             Arc::new(ObjectList::new(lights)),
-            |_ray| BLACK,
+            |_ray| 0.0,
         )
     }
 }

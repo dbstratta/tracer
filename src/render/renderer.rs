@@ -7,10 +7,13 @@ use rayon::prelude::*;
 
 use crate::{
     camera::Camera,
-    color::{Color, RgbColor},
+    cie::CieTristimulus,
     helpers,
+    photon::Photon,
     render::{output::save_image, Pixel},
+    rgb_color::{RawRgbColor, RgbColor},
     scene::Scene,
+    tonemap::tonemap,
     vec3::{Point3, Vec3},
 };
 
@@ -21,7 +24,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(camera: Arc<Camera>, scene: Arc<Scene>) -> Self {
+    pub const fn new(camera: Arc<Camera>, scene: Arc<Scene>) -> Self {
         Self { camera, scene }
     }
 
@@ -53,15 +56,15 @@ impl Renderer {
         samples_per_pixel: u32,
         max_ray_bounces: u32,
         gamma: f32,
-    ) -> Vec<RgbColor> {
+    ) -> Vec<RawRgbColor> {
         let progresses = Arc::new(Mutex::new(vec![false; image_height as usize]));
 
-        let rgb_list = rayon::scope(|_| {
+        let rgb_list: Vec<CieTristimulus> = rayon::scope(|_| {
             (0..image_height)
                 .into_par_iter()
                 .rev()
                 .flat_map(|y| {
-                    let rgb_row: Vec<RgbColor> = (0..image_width)
+                    let rgb_row: Vec<CieTristimulus> = (0..image_width)
                         .map(|x| {
                             self.render_pixel(
                                 samples_per_pixel,
@@ -71,8 +74,7 @@ impl Renderer {
                                 y,
                                 max_ray_bounces,
                             )
-                            .process(gamma)
-                            .to_rgb()
+                            .cie_tristimulus()
                         })
                         .collect();
 
@@ -97,7 +99,15 @@ impl Renderer {
                 .collect()
         });
 
+        // tonemap(&rgb_list[..])
         rgb_list
+            .iter()
+            .map(|&d| {
+                RgbColor::from_cie_tristimulus(d)
+                    .gamma_correct(gamma)
+                    .to_raw()
+            })
+            .collect()
     }
 
     fn render_pixel(
@@ -123,12 +133,12 @@ impl Renderer {
         x: u32,
         y: u32,
         max_ray_bounces: u32,
-    ) -> Color {
+    ) -> Photon {
         let s = (x as f32) / (image_width as f32 - 1.0);
         let t = (y as f32) / (image_height as f32 - 1.0);
 
         let ray = self.camera.cast_ray(s, t);
 
-        ray.color(&self.scene, max_ray_bounces)
+        Photon::new(ray.wavelength, ray.trace(&self.scene, max_ray_bounces))
     }
 }

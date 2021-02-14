@@ -8,6 +8,9 @@ use crate::{
 
 pub trait Hittable {
     fn hit(&self, ray: &Ray, max_t: f32) -> Option<Hit>;
+
+    fn ray_to_self_probability(&self, ray: &Ray) -> f32;
+    fn random_direction_to_self(&self, origin: Point3, time: f32) -> Vec3;
 }
 
 #[derive(Clone)]

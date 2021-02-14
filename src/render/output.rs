@@ -1,12 +1,12 @@
 use std::path::Path;
 
-use crate::color::RgbColor;
+use crate::rgb_color::RawRgbColor;
 
 const PPM_EXTENSION: &str = "ppm";
 
 pub fn save_image(
     path_str: &str,
-    rgb_list: &[RgbColor],
+    rgb_list: &[RawRgbColor],
     width: u32,
     height: u32,
 ) -> image::ImageResult<()> {

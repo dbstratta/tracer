@@ -62,6 +62,10 @@ impl Vec3 {
             random(0.0..(2.0 * PI)),
         )
     }
+
+    pub fn random() -> Self {
+        Self::new(random(0.0..=1.0), random(0.0..=1.0), random(0.0..=1.0))
+    }
 }
 
 pub fn dot(lhs: Vec3, rhs: Vec3) -> f32 {

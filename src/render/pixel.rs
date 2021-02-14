@@ -1,17 +1,22 @@
-use crate::color::{Color, BLACK};
+use crate::{cie::CieTristimulus, photon::Photon, rgb_color::RgbColor};
 
 pub struct Pixel {
-    samples: Vec<Color>,
+    samples: Vec<Photon>,
 }
 
 impl Pixel {
-    pub const fn new(samples: Vec<Color>) -> Self {
+    pub const fn new(samples: Vec<Photon>) -> Self {
         Self { samples }
     }
 
-    pub fn process(&self, gamma: f32) -> Color {
-        self.samples.iter().fold(BLACK, |sum, &sample| {
-            sum + (sample / self.samples.len() as f32).gamma(gamma)
-        })
+    pub fn rgb_color(&self, gamma: f32) -> RgbColor {
+        RgbColor::from_cie_tristimulus(self.cie_tristimulus()).gamma_correct(gamma)
+    }
+
+    pub fn cie_tristimulus(&self) -> CieTristimulus {
+        self.samples
+            .iter()
+            .map(|&sample| sample.cie_tristimulus())
+            .fold(CieTristimulus::zero(), |sum, tristimulus| sum + tristimulus)
     }
 }
