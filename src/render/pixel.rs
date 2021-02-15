@@ -18,5 +18,6 @@ impl Pixel {
             .iter()
             .map(|&sample| sample.cie_tristimulus())
             .fold(CieTristimulus::zero(), |sum, tristimulus| sum + tristimulus)
+            / self.samples.len() as f32
     }
 }

@@ -112,12 +112,12 @@ impl Hittable for Sphere {
     }
 
     fn random_direction_to_self(&self, origin: Point3, time: f32) -> Vec3 {
-        let direction = self.center(time) - origin;
+        let w = self.center(time) - origin;
 
         let r1 = random(0.0..1.0);
         let r2 = random(0.0..1.0);
 
-        let z = 1.0 + r2 * (f32::sqrt(1.0 - self.radius.powi(2) / direction.len_squared()) - 1.0);
+        let z = 1.0 + r2 * (f32::sqrt(1.0 - self.radius.powi(2) / w.len_squared()) - 1.0);
 
         let phi = 2.0 * PI * r1;
         let x = phi.cos() * (1.0 - z.powi(2)).sqrt();
@@ -125,7 +125,7 @@ impl Hittable for Sphere {
 
         let direction = Vec3::new(x, y, z);
 
-        Onb::from_w(direction).local(direction)
+        Onb::from_w(w).local(direction)
     }
 }
 

@@ -99,8 +99,8 @@ impl Renderer {
                 .collect()
         });
 
-        // tonemap(&rgb_list[..])
-        rgb_list
+        tonemap(&rgb_list[..])
+            // rgb_list
             .iter()
             .map(|&d| {
                 RgbColor::from_cie_tristimulus(d)

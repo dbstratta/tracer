@@ -85,6 +85,14 @@ impl ops::Mul<CieTristimulus> for f32 {
     }
 }
 
+impl ops::Div<f32> for CieTristimulus {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self {
+        self * (1.0 / rhs)
+    }
+}
+
 const TRISTIMULUS_MIN_WAVELENGTH: f32 = 380.0;
 const TRISTIMULUS_VALUES_INTERVAL: u32 = 5;
 

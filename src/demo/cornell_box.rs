@@ -41,7 +41,7 @@ impl Demo for CornellBox {
             Point3::new(0.0, 0.0, 0.0),
             1.0,
             Arc::new(Material::Reflective(Arc::new(Lambertian::new(
-                Arc::new(SolidColor::new(400.0, 100.0)),
+                Arc::new(SolidColor::new(500.0, 10.0)),
                 1.0,
             )))),
         ));
@@ -62,9 +62,9 @@ impl Demo for CornellBox {
         // lights.push(sphere2);
 
         let light: Arc<dyn Object> = Arc::new(Sphere::new(
-            Point3::new(0.0, 10.0, 0.0),
+            Point3::new(0.0, 20.0, 0.0),
             7.0,
-            Arc::new(Material::Emissive(Arc::new(BlackBody::new(3000.0, 1.0)))),
+            Arc::new(Material::Emissive(Arc::new(BlackBody::new(5000.0, 1.0)))),
         ));
 
         objects.push(Arc::clone(&light));

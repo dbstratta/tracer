@@ -65,7 +65,7 @@ impl ScatteringPdf for Cosine {
     }
 
     fn sample(&self) -> Vec3 {
-        self.onb.local(random_cosine_direction())
+        self.onb.local(random_cosine_direction()).unit()
     }
 }
 
@@ -106,7 +106,9 @@ impl ScatteringPdf for Emissive {
     }
 
     fn sample(&self) -> Vec3 {
-        self.object.random_direction_to_self(self.origin, self.time)
+        self.object
+            .random_direction_to_self(self.origin, self.time)
+            .unit()
     }
 }
 
