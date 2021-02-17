@@ -1,31 +1,21 @@
-use crate::{
-    pdfs::{self, Pdf},
-    textures::Texture,
-};
+use crate::{rgb_color::RgbColor, textures::Texture, vec3::Point3};
 
 pub struct SolidColor {
-    pub wavelength: f32,
-    pub deviation: f32,
-    pub pdf: pdfs::Normal,
-    pub pdf_max_value: f32,
+    color: RgbColor,
 }
 
 impl SolidColor {
-    pub fn new(wavelength: f32, deviation: f32) -> Self {
-        let pdf = pdfs::Normal::new(wavelength, deviation);
-        let pdf_max_value = pdf.value(wavelength);
+    pub const fn new(red: f32, green: f32, blue: f32) -> Self {
+        Self::from_rgb_color(RgbColor::new(red, green, blue))
+    }
 
-        Self {
-            wavelength,
-            deviation,
-            pdf,
-            pdf_max_value,
-        }
+    pub const fn from_rgb_color(color: RgbColor) -> Self {
+        Self { color }
     }
 }
 
 impl Texture for SolidColor {
-    fn probability(&self, wavelength: f32, _u: f32, _v: f32) -> f32 {
-        self.pdf.value(wavelength) / self.pdf_max_value
+    fn value(&self, _u: f32, _v: f32, _point: Point3) -> RgbColor {
+        self.color
     }
 }

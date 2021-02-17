@@ -7,9 +7,9 @@ use rayon::prelude::*;
 
 use crate::{
     camera::Camera,
-    color::{Color, RgbColor},
-    helpers,
-    render::{output::save_image, Pixel},
+    helpers::random,
+    render::output::save_image,
+    rgb_color::{RawRgbColor, RgbColor, BLACK},
     scene::Scene,
     vec3::{Point3, Vec3},
 };
@@ -21,7 +21,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(camera: Arc<Camera>, scene: Arc<Scene>) -> Self {
+    pub const fn new(camera: Arc<Camera>, scene: Arc<Scene>) -> Self {
         Self { camera, scene }
     }
 
@@ -35,7 +35,7 @@ impl Renderer {
     ) -> image::ImageResult<()> {
         let image_width = f32::round(image_height as f32 * self.camera.aspect_ratio) as u32;
 
-        let rgb_list = self.render_in_parallel(
+        let raw_rgb_list = self.render_in_parallel(
             image_height,
             image_width,
             samples_per_pixel,
@@ -43,7 +43,7 @@ impl Renderer {
             gamma,
         );
 
-        save_image(path, &rgb_list[..], image_width, image_height)
+        save_image(path, &raw_rgb_list[..], image_width, image_height)
     }
 
     fn render_in_parallel(
@@ -53,67 +53,45 @@ impl Renderer {
         samples_per_pixel: u32,
         max_ray_bounces: u32,
         gamma: f32,
-    ) -> Vec<RgbColor> {
-        let progresses = Arc::new(Mutex::new(vec![false; image_height as usize]));
+    ) -> Vec<RawRgbColor> {
+        let pixel_count = image_height * image_width;
 
-        let rgb_list = rayon::scope(|_| {
-            (0..image_height)
-                .into_par_iter()
+        let render_data = Arc::new(Mutex::new((vec![BLACK; pixel_count as usize], 0)));
+
+        (0..samples_per_pixel).into_par_iter().for_each(|_| {
+            let image_layer: Vec<_> = (0..image_height)
                 .rev()
                 .flat_map(|y| {
-                    let rgb_row: Vec<RgbColor> = (0..image_width)
+                    (0..image_width)
                         .map(|x| {
-                            self.render_pixel(
-                                samples_per_pixel,
-                                image_height,
-                                image_width,
-                                x,
-                                y,
-                                max_ray_bounces,
-                            )
-                            .process(gamma)
-                            .to_rgb()
+                            self.render_sample(image_height, image_width, x, y, max_ray_bounces)
                         })
-                        .collect();
-
-                    let progresses_clone = Arc::clone(&progresses);
-                    let mut progresses_guard = progresses_clone.lock().unwrap();
-                    (*progresses_guard)[y as usize] = true;
-
-                    if y % 5 == 0 {
-                        let progress = (progresses_guard
-                            .iter()
-                            .filter(|&&y| y)
-                            .collect::<Vec<&bool>>()
-                            .len()
-                            * 100)
-                            / progresses_guard.len();
-
-                        eprint!("\rRendering... {}%", progress);
-                    }
-
-                    rgb_row
+                        .collect::<Vec<_>>()
                 })
-                .collect()
+                .collect();
+
+            let render_data_clone = Arc::clone(&render_data);
+            let mut data = render_data_clone.lock().unwrap();
+
+            (*data).0 = (*data)
+                .0
+                .iter()
+                .zip(image_layer.iter())
+                .map(|(&color1, &color2)| color1 + color2 / samples_per_pixel as f32)
+                .collect();
+            (*data).1 += 1;
+
+            eprint!("\rRendering... {}%", (*data).1 * 100 / samples_per_pixel);
         });
 
-        rgb_list
-    }
+        let render_data_clone = Arc::clone(&render_data);
+        let data = render_data_clone.lock().unwrap();
 
-    fn render_pixel(
-        &self,
-        samples_per_pixel: u32,
-        image_height: u32,
-        image_width: u32,
-        x: u32,
-        y: u32,
-        max_ray_bounces: u32,
-    ) -> Pixel {
-        Pixel::new(
-            (0..samples_per_pixel)
-                .map(|_| self.render_sample(image_height, image_width, x, y, max_ray_bounces))
-                .collect(),
-        )
+        (*data)
+            .0
+            .iter()
+            .map(|color| color.gamma_correct(gamma).to_raw())
+            .collect()
     }
 
     fn render_sample(
@@ -123,12 +101,12 @@ impl Renderer {
         x: u32,
         y: u32,
         max_ray_bounces: u32,
-    ) -> Color {
-        let s = (x as f32) / (image_width as f32 - 1.0);
-        let t = (y as f32) / (image_height as f32 - 1.0);
+    ) -> RgbColor {
+        let s = (x as f32 + random(0.0..1.0)) / (image_width as f32 - 1.0);
+        let t = (y as f32 + random(0.0..1.0)) / (image_height as f32 - 1.0);
 
         let ray = self.camera.cast_ray(s, t);
 
-        ray.color(&self.scene, max_ray_bounces)
+        ray.trace(&self.scene, max_ray_bounces)
     }
 }

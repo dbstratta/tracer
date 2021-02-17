@@ -1,11 +1,14 @@
+use std::f32::consts::PI;
 use std::sync::Arc;
 
 use crate::{
-    hittable::{Hit, Hittable},
+    helpers::random,
+    hittable::{intersects, Hit, Hittable},
     materials::Material,
     mobile::{position, Mobile},
     objects::Object,
-    ray::{Ray, MIN_T},
+    onb::Onb,
+    ray::{Ray, MAX_T},
     vec3::{dot, Point3, Vec3},
 };
 
@@ -19,7 +22,7 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f32, material: Arc<Material>) -> Self {
+    pub const fn new(center: Point3, radius: f32, material: Arc<Material>) -> Self {
         Self {
             initial_center: center,
             radius,
@@ -39,20 +42,19 @@ impl Sphere {
     }
 
     fn hit_from_t(&self, ray: &Ray, t: f32, max_t: f32, center: Point3) -> Option<Hit> {
-        if t < MIN_T || t > max_t {
+        if !intersects(t, max_t) {
             return None;
         }
 
-        let outward_normal = ray.direction - center;
-
         let hit_point = ray.at(t);
+        let outward_normal = hit_point - center;
+
         let (u, v) = Self::texture_uv(hit_point, center);
 
         Some(Hit::new(
-            hit_point,
+            ray,
             t,
             outward_normal,
-            ray,
             Arc::clone(&self.material),
             u,
             v,
@@ -73,24 +75,57 @@ impl Hittable for Sphere {
         let center = self.center(ray.time);
         let translated_ray_origin = ray.origin - center;
         let half_b = dot(ray.direction, translated_ray_origin);
-        let c = dot(translated_ray_origin, translated_ray_origin) - f32::powi(self.radius, 2);
+        let c = translated_ray_origin.len_squared() - self.radius.powi(2);
 
-        let discriminant = f32::powi(half_b, 2) - c;
+        let discriminant = half_b.powi(2) - c;
 
         if discriminant < 0.0 {
             return None;
         }
 
-        let t0 = -half_b - f32::sqrt(discriminant);
+        let sqrted_discriminant = f32::sqrt(discriminant);
+        let t0 = -half_b - sqrted_discriminant;
 
         match self.hit_from_t(ray, t0, max_t, center) {
             None => {
-                let t1 = -half_b + f32::sqrt(discriminant);
+                let t1 = -half_b + sqrted_discriminant;
 
                 self.hit_from_t(ray, t1, max_t, center)
             }
             hit => hit,
         }
+    }
+
+    fn ray_to_self_probability(&self, ray: &Ray) -> f32 {
+        match self.hit(ray, MAX_T) {
+            Some(_) => {
+                let cos_theta_max = (1.0
+                    - self.radius.powi(2) / (self.center(ray.time) - ray.origin).len_squared())
+                .sqrt();
+
+                let solid_angle = 2.0 * PI * (1.0 - cos_theta_max);
+
+                1.0 / solid_angle
+            }
+            None => 0.0,
+        }
+    }
+
+    fn random_direction_to_self(&self, origin: Point3, time: f32) -> Vec3 {
+        let w = self.center(time) - origin;
+
+        let r1 = random(0.0..1.0);
+        let r2 = random(0.0..1.0);
+
+        let z = 1.0 + r2 * (f32::sqrt(1.0 - self.radius.powi(2) / w.len_squared()) - 1.0);
+
+        let phi = 2.0 * PI * r1;
+        let x = phi.cos() * (1.0 - z.powi(2)).sqrt();
+        let y = phi.sin() * (1.0 - z.powi(2)).sqrt();
+
+        let direction = Vec3::new(x, y, z);
+
+        Onb::from_w(w).local(direction).unit()
     }
 }
 

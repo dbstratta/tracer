@@ -1,6 +1,7 @@
 mod object;
 mod object_list;
+mod rectangle;
+mod rectangular_prism;
 mod sphere;
-mod triangle;
 
-pub use self::{object::*, object_list::*, sphere::*, triangle::*};
+pub use self::{object::*, object_list::*, rectangle::*, rectangular_prism::*, sphere::*};

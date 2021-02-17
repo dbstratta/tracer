@@ -33,14 +33,14 @@ impl Vec3 {
         Self::new(0.0, 0.0, 1.0)
     }
 
-    pub fn from_polar(length: f32, azimuthal_angle: f32, polar_angle: f32) -> Self {
+    pub fn from_polar(azimuthal_angle: f32, polar_angle: f32) -> Self {
         let sin_polar_angle = f32::sin(polar_angle);
 
         Self::new(
             sin_polar_angle * f32::cos(azimuthal_angle),
             sin_polar_angle * f32::sin(azimuthal_angle),
             f32::cos(polar_angle),
-        ) * length
+        )
     }
 
     pub fn len(self) -> f32 {
@@ -56,11 +56,24 @@ impl Vec3 {
     }
 
     pub fn random_in_sphere(radius: f32) -> Self {
-        Self::from_polar(
-            random(0.0..=radius),
-            random(0.0..(2.0 * PI)),
-            random(0.0..(2.0 * PI)),
-        )
+        random(0.0..=radius) * Self::from_polar(random(0.0..(2.0 * PI)), random(0.0..(2.0 * PI)))
+    }
+
+    pub fn random() -> Self {
+        Self::new(random(0.0..=1.0), random(0.0..=1.0), random(0.0..=1.0))
+    }
+
+    pub fn reflect(&self, normal: Self) -> Self {
+        *self - normal * dot(*self, normal) * 2.0
+    }
+
+    pub fn refract(&self, normal: Self, eta_over_etap: f32) -> Self {
+        let cos_theta = f32::min(dot(-*self, normal), 1.0);
+
+        let r_out_perpendicular = (*self + normal * cos_theta) * eta_over_etap;
+        let r_out_parallel = normal * -f32::sqrt((1.0 - r_out_perpendicular.len_squared()).abs());
+
+        r_out_perpendicular + r_out_parallel
     }
 }
 

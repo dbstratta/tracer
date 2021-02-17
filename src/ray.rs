@@ -1,5 +1,9 @@
+use std::sync::Arc;
+
 use crate::{
-    color::{Color, BLACK},
+    materials::{Material, ScatterResult},
+    pdfs::{EmissivePdf, MixturePdf, ScatteringPdf},
+    rgb_color::{RgbColor, BLACK},
     scene::Scene,
     vec3::{Point3, Vec3},
 };
@@ -11,40 +15,62 @@ pub const MAX_T: f32 = f32::INFINITY;
 pub struct Ray {
     pub origin: Point3,
     pub direction: Vec3,
-    pub wavelength: f32,
-    pub probability: f32,
     pub time: f32,
 }
 
 impl Ray {
-    pub fn new(
-        origin: Point3,
-        direction: Vec3,
-        wavelength: f32,
-        probability: f32,
-        time: f32,
-    ) -> Self {
+    pub const fn new(origin: Point3, direction: Vec3, time: f32) -> Self {
         Self {
             origin,
             direction,
-            wavelength,
-            probability,
             time,
         }
+    }
+
+    pub fn secondary(&self, origin: Point3, direction: Vec3) -> Self {
+        Self::new(origin, direction, self.time)
     }
 
     pub fn at(&self, t: f32) -> Point3 {
         self.origin + t * self.direction
     }
 
-    pub fn color(&self, scene: &Scene, depth: u32) -> Color {
+    pub fn trace(&self, scene: &Scene, depth: u32) -> RgbColor {
         if depth == 0 {
             return BLACK;
         }
 
         match scene.objects.hit(self, MAX_T) {
             None => scene.background(self),
-            Some(hit) => Color::new(0.0, 1.0, 0.0),
+
+            Some(hit) => match hit.material.as_ref() {
+                Material::Reflective(material) => match material.scatter(self, &hit) {
+                    ScatterResult::Diffuse { pdf, attenuation } => {
+                        let lights_pdf = Arc::new(EmissivePdf::new(
+                            Arc::clone(&scene.lights),
+                            hit.point,
+                            self.time,
+                        ));
+                        let mixture_pdf = MixturePdf::new(0.5, lights_pdf, Arc::clone(&pdf));
+
+                        let scattered_ray = self.secondary(hit.point, mixture_pdf.sample());
+                        let pdf_value = mixture_pdf.value(scattered_ray.direction);
+                        let material_pdf_value = pdf.value(scattered_ray.direction);
+
+                        if !pdf_value.is_normal() || !material_pdf_value.is_normal() {
+                            return BLACK;
+                        }
+
+                        attenuation
+                            * (scattered_ray.trace(scene, depth - 1) / pdf_value)
+                            * material_pdf_value
+                    }
+                    ScatterResult::Specular { ray, attenuation } => {
+                        attenuation * ray.trace(scene, depth - 1)
+                    }
+                },
+                Material::Emissive(material) => material.emitted(self, &hit),
+            },
         }
     }
 }

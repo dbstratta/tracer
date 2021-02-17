@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use crate::{color::Color, objects::Object, ray::Ray};
+use crate::{objects::Object, ray::Ray, rgb_color::RgbColor};
 
 #[derive(Clone)]
 pub struct Scene {
-    background: fn(&Ray) -> Color,
+    background: fn(&Ray) -> RgbColor,
     pub objects: Arc<dyn Object>,
     pub lights: Arc<dyn Object>,
 }
@@ -13,7 +13,7 @@ impl Scene {
     pub fn new(
         objects: Arc<dyn Object>,
         lights: Arc<dyn Object>,
-        background: fn(&Ray) -> Color,
+        background: fn(&Ray) -> RgbColor,
     ) -> Self {
         Self {
             objects,
@@ -22,7 +22,7 @@ impl Scene {
         }
     }
 
-    pub fn background(&self, ray: &Ray) -> Color {
+    pub fn background(&self, ray: &Ray) -> RgbColor {
         (self.background)(ray)
     }
 }
