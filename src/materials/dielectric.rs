@@ -3,7 +3,7 @@ use crate::{
     hittable::Hit,
     materials::{ReflectiveMaterial, ScatterResult},
     ray::Ray,
-    rgb_color::{RgbColor, WHITE},
+    rgb_color::RgbColor,
     vec3::dot,
 };
 

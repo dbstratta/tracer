@@ -1,11 +1,9 @@
 use std::ops;
 
-use serde::{Deserialize, Serialize};
-
 pub const BLACK: RgbColor = RgbColor::new(0.0, 0.0, 0.0);
 pub const WHITE: RgbColor = RgbColor::new(1.0, 1.0, 1.0);
 
-#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct RgbColor {
     pub red: f32,
     pub green: f32,

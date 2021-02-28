@@ -2,7 +2,6 @@ pub mod camera;
 pub mod helpers;
 pub mod hittable;
 pub mod materials;
-pub mod mobile;
 pub mod objects;
 pub mod onb;
 pub mod pdfs;

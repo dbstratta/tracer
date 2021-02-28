@@ -2,10 +2,9 @@ use std::f32::consts::PI;
 use std::sync::Arc;
 
 use crate::{
-    helpers::random,
+    helpers::{position, random},
     hittable::{intersects, Hit, Hittable},
     materials::Material,
-    mobile::{position, Mobile},
     objects::Object,
     onb::Onb,
     ray::{Ray, MAX_T},
@@ -22,12 +21,18 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub const fn new(center: Point3, radius: f32, material: Arc<Material>) -> Self {
+    pub const fn new(
+        center: Point3,
+        radius: f32,
+        material: Arc<Material>,
+        acceleration: Vec3,
+        initial_velocity: Vec3,
+    ) -> Self {
         Self {
             initial_center: center,
             radius,
-            acceleration: Vec3::zero(),
-            initial_velocity: Vec3::zero(),
+            acceleration,
+            initial_velocity,
             material,
         }
     }
@@ -129,9 +134,40 @@ impl Hittable for Sphere {
     }
 }
 
-impl Mobile for Sphere {
-    fn accelerate(&mut self, acceleration: Vec3, initial_velocity: Vec3) {
+#[derive(Clone)]
+pub struct SphereBuilder {
+    pub initial_center: Point3,
+    pub radius: f32,
+    pub initial_velocity: Vec3,
+    pub acceleration: Vec3,
+    pub material: Arc<Material>,
+}
+
+impl SphereBuilder {
+    pub fn new(center: Point3, radius: f32, material: Arc<Material>) -> Self {
+        Self {
+            initial_center: center,
+            radius,
+            acceleration: Vec3::zero(),
+            initial_velocity: Vec3::zero(),
+            material,
+        }
+    }
+
+    fn accelerate<'a>(&'a mut self, acceleration: Vec3, initial_velocity: Vec3) -> &'a mut Self {
         self.acceleration = acceleration;
         self.initial_velocity = initial_velocity;
+
+        self
+    }
+
+    pub fn build(&self) -> Sphere {
+        Sphere::new(
+            self.initial_center,
+            self.radius,
+            Arc::clone(&self.material),
+            self.acceleration,
+            self.initial_velocity,
+        )
     }
 }
