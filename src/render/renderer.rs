@@ -1,7 +1,4 @@
-use std::fs::File;
-use std::io::{Error, Write};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 use rayon::prelude::*;
 
@@ -11,7 +8,6 @@ use crate::{
     render::output::save_image,
     rgb_color::{RawRgbColor, RgbColor, BLACK},
     scene::Scene,
-    vec3::{Point3, Vec3},
 };
 
 #[derive(Clone)]

@@ -113,10 +113,10 @@ impl Demo for CornellBox {
 
         objects.append(&mut Self::walls());
 
-        let ceilling_light: Arc<dyn Object> = Arc::new(
+        let light: Arc<dyn Object> = Arc::new(
             RectangleBuilder::new(
                 Point3::new(400.0, 599.9, -200.0),
-                Vec3::new(0.0, -1., 1.).unit(),
+                Vec3::new(0.0, -1.0, 1.0).unit(),
                 -Vec3::z(),
                 400.0,
                 400.0,
@@ -127,8 +127,8 @@ impl Demo for CornellBox {
             .build(),
         );
 
-        objects.push(Arc::clone(&ceilling_light));
-        lights.push(ceilling_light);
+        objects.push(Arc::clone(&light));
+        lights.push(light);
 
         let sphere = Arc::new(
             SphereBuilder::new(
